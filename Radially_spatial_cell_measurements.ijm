@@ -19,8 +19,8 @@
 
 #@ File (label = "Select input original images directory", style = "directory") input
 #@ File (label = "Select overlay image ", style = "directory") overlays
-#@ File (label = "Select uutput directory", style = "directory") output
-#@ Integer (label = "Band width", value = "4") band_width
+#@ File (label = "Select output directory", style = "directory") output
+#@ Integer (label = "Band width (micra)", value = "4") band_width
 #@ String (label = "File suffix", value = ".tif") suffix
 
 // See also Process_Folder.py for a version of this code
@@ -71,7 +71,8 @@ function processFile(input, output, file) {
 
 	//get each contour, exclude on the edge of the image and add to RoiManager
 	run("Analyze Particles...", "exclude add");
-
+	saveAs("Tiff", output + File.separator + title_begin + "_cells");
+	
 	//Perform roi manipulations to get the 3 bands (enlarge -, XOR, twice)
 	number_cells = roiManager("count"); 
 	roi1 = newArray(number_cells);
