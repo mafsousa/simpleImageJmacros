@@ -16,7 +16,7 @@
 * */
  
 #@ File (label = "Select input original images directory", style = "directory") inDir
-#@ File (label = "Select uutput directory", style = "directory") outDir
+#@ File (label = "Select output directory", style = "directory") outDir
 #@ String (label = "File suffix", value = ".lif") ext
 
 setBatchMode(true);
