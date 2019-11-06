@@ -35,6 +35,7 @@ if(File.exists(filename) && (endsWith(filename, ext))){
 	img=getTitle();		//original image
 	run("Duplicate...", "duplicate");
 	//Preprocess
+	//try sobel filter followed by gaussian filter
 	run("Subtract Background...", "rolling=10 light stack");
 	run("Gaussian Blur...", "sigma=3 stack");
 	resetMinAndMax();
