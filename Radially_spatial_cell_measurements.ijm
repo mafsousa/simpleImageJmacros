@@ -2,8 +2,10 @@
  * Version:v0.2
 *
 * Short description: Input stack files with CY3 in the first channel (result from macro FromInCellToHyperstack) 
-* and the corresponding cell contours (result from Cellprofiler). Create 2 bands from the original contour 
-* with "band_with" specified by the user. Measure area and intensity inside each band, for each cell and save it as an excel file
+* and the corresponding cell contours, nucleus contour and endossomes contours (result from Cellprofiler). 
+* The idea is to create 2 bands from the original contour with "band_with" specified by the user. 
+* Measure area and intensity inside each band, for each cell (over the endossomes region) and save it as an excel file
+* Requirements: install IJPB-plugin (https://github.com/ijpb/MorphoLibJ) for morphological watershed
 * 
 * This macro should NOT be redistributed without author's permission. 
 * Explicit acknowledgement to the ALM facility should be done in case of published articles (approved in C.E. 7/17/2017):     
@@ -23,10 +25,6 @@
 #@ Integer (label = "Band width", value = "4") band_width
 #@ String (label = "File suffix", value = ".tif") suffix
 
-
-
-// See also Process_Folder.py for a version of this code
-// in the Python scripting language.
 
 setBatchMode(false);
 run("Close All");
@@ -62,15 +60,17 @@ function processFile(input, output, file) {
 	dotIndex = lastIndexOf( original_stack, "wv");
 	title_begin = substring( original_stack , 0, dotIndex);
 
-	//Nota NOme predefinido no cellprofiler
+	//Note: predifined file names from cellprofiler output
+	// edit the following lines with particular file names
 	cell_overlay = title_begin + "wv FITC - FITC)CellsOutlines.tiff";	
 	nuc_overlay = title_begin + "wv FITC - FITC)NucsOutlines.tiff";	
 	endo_overlay = title_begin + "wv FITC - FITC)EndoOutlines.tiff";	
 		
+	//close stack
 	selectWindow(original_stack);
 	close();
 
-	//open overlay image
+	//open overlay images
 	print(overlays + File.separator + cell_overlay);
 	open(overlays + File.separator + cell_overlay);
 	cells = getTitle();
@@ -89,7 +89,7 @@ function processFile(input, output, file) {
 	selectWindow(cells);
 	run("Invert");
 	run("Fill Holes");
-	//watershed
+	//watershed MORPHOLIBJ
 	run("Marker-controlled Watershed", "input=" + cells +" marker=marker mask=None binary calculate use");
 	rename("watershed_lines");
 	run("8-bit");
@@ -115,10 +115,8 @@ function processFile(input, output, file) {
 	roi3 = newArray(number_cells);
 	
 	for (r = 0; r < number_cells; r++) {
-		indx = 4*r +number_cells;
-		
+		indx = 4*r +number_cells;		
 		roiManager("select", r);
-
 		run("Enlarge...", "enlarge=-" + band_width); //reduce roi		
 		IJ.redirectErrorMessages();	
 		roiManager("Add");	
@@ -137,13 +135,9 @@ function processFile(input, output, file) {
   			roiManager("select", newArray(r,indx));	
 			roiManager("XOR");
 			roiManager("Add");
-			roi1[r] = indx+1;  //outside band
-			
+			roi1[r] = indx+1;  //outside band			
 		}			
-		
 		roiManager("select", indx);
-		//run("Check enlarge");	
-			
 		run("Enlarge...", "enlarge=-" + band_width);
 		IJ.redirectErrorMessages(); //to avoid stoping in case there is no ROI to add
 		roiManager("Add");		
@@ -165,12 +159,13 @@ function processFile(input, output, file) {
 	}
 
 	selectWindow(endo);
+	//preprocess endossome countours
 	run("Multiply...","value=255");
 	run("Invert");
 	run("Divide...","value=255");
+	//Get Cy3 only inside endossomes
 	imageCalculator("Multiply create",endo,"Cy3");
 	result_endo_in_cy3 =getTitle();
-
 	
 	//create Results table to store the measurements
 	title1 = "Results table";
@@ -193,11 +188,8 @@ function processFile(input, output, file) {
 		else if(roi2[s]!=-1 && roi3[s] !=-1){
 			print(roi1[s],roi2[s],roi3[s]);
 			roiManager("select", newArray(roi1[s],roi2[s],roi3[s]));	
-		}
-		
+		}		
 		roiManager("Multi Measure");
-		
-
 		headings = split(String.getResultsHeadings);
 		line = "";
 		for (a=0; a<lengthOf(headings); a++)
@@ -215,7 +207,6 @@ function processFile(input, output, file) {
 		else if(roi2[s]!=-1 && roi3[s] !=-1){
 			print(f,s+"\t"+array_line[0]+"\t"+array_line[1]+"\t"+array_line[4]+"\t"+array_line[5]+"\t"+array_line[2]+"\t"+array_line[3]); //change the order of rois to be: outside, intermediate, inside 	
 		}
-
 	}
 
 	//save output image with bands and results table
