@@ -1,7 +1,7 @@
 /* Title: Spectral FRET analysis
- * Version:
+ * Version:v0.2
 *
-* Short description: A specific macro to analyze particular spectral fret images. Inputs are Donnor only, Acceptor only and FRET images.  
+* Short description: A specific macro to analyze particular BAND of spectral fret images. Inputs are Donnor only, Acceptor only and FRET images.  
 * Application of "Gustina and Trudeau 10.1073/pnas.0900180106" formulas
 * 
 * This macro should NOT be redistributed without author's permission. 
@@ -404,10 +404,13 @@ function ImportResultsTable(table_file){
  	else{
 		run("Enlarge...", "enlarge=-" + band);
 		roiManager("add");
-		roiManager("Select", newArray(0,1));
+		roiManager("select", 0);
+		run("Enlarge...", "enlarge=" + band);
+		roiManager("add");
+		roiManager("Select", newArray(1,2));
 		roiManager("XOR");
 		roiManager("add");
-		indx = 2;
+		indx = 3;
 		return indx;
  	}
 	
